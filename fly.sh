@@ -68,6 +68,18 @@ test() {
   docker run -t -i --rm -v $SRCDIR:/app:ro -w /app --name=$container_name $test_image_name npm test
 }
 
+upgrade() {
+  local source_url='https://raw.githubusercontent.com/Stocard/fly/master/fly.sh'
+  mkdir -p /opt/fly
+  echo "downloading latest version of fly from $source_url"
+  curl -sL $source_url > /tmp/fly.sh
+  mv /tmp/fly.sh /opt/fly/fly.sh
+  chmod +x /opt/fly/fly.sh
+  rm -f /usr/local/bin/fly
+  ln -s /opt/fly/fly.sh /usr/local/bin/fly
+  echo "fly upgraded"
+}
+
 case $COMMAND in
   fetch)
     fetch $DIR
@@ -93,6 +105,9 @@ case $COMMAND in
   ;;
   test)
     test
+  ;;
+  upgrade)
+    upgrade
   ;;
   *)
     echo "Sorry, I don't know $COMMAND"
