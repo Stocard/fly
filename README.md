@@ -3,7 +3,9 @@ fly
 
 a simple shell script for wrapping services as upstart-managed docker containers.
 
+
 ###Installation
+
 Install the current master (as root):
 ```shell
 mkdir /opt/fly
@@ -12,3 +14,20 @@ chmod +x /opt/fly/fly.sh
 ln -s /opt/fly/fly.sh /usr/local/bin/fly
 ```
 
+
+###Commands
+
+####`fly fetch`
+Performs `git fetch` in the current directory and resets to origin/master.
+
+####`fly fetch-config DIRECTORY`
+Performs `git fetch` in the given DIRECTORY and resets to origin/master.
+
+####`fly build ENVIRONMENT PUBLIC_PORT CONFIG_DIRECTORY`
+Builds a container using the given parameters.
+
+####`fly test`
+Builds & starts a test container and runs `npm test` in it.
+
+####`fly deploy ENVIRONMENT PUBLIC_PORT CONFIG_DIRECTORY`
+Performs `fly fetch`, `fly fetch-config`, `fly build` and `service <SERVICE_NAME> restart`.
