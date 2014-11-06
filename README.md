@@ -26,8 +26,8 @@ Performs `git fetch` in the given DIRECTORY and resets to origin/master.
 ####`fly build ENVIRONMENT PUBLIC_PORT CONFIG_DIRECTORY`
 Builds a container using the given parameters and creates an upstart config.
 
-####`fly test`
-Builds & starts a test container and runs `npm test` in it.
+####`fly run [command]`
+Builds and starts a container and runs `[command]` in it.
 
 ####`fly deploy ENVIRONMENT PUBLIC_PORT CONFIG_DIRECTORY`
 Performs `fly fetch`, `fly fetch-config`, `fly build` and `service <SERVICE_NAME> restart`.
