@@ -71,7 +71,9 @@ run() {
 }
 
 upgrade() {
-  local source_url='https://raw.githubusercontent.com/Stocard/fly/master/fly.sh'
+  local github_source=$1
+  local git_ref=$2
+  local source_url="https://raw.githubusercontent.com/$github_source/$git_ref/fly.sh"
   mkdir -p /opt/fly
   echo "downloading latest version of fly from $source_url"
   curl -sL $source_url > /tmp/fly.sh
@@ -110,7 +112,15 @@ case $COMMAND in
     run $ARGS
   ;;
   upgrade)
-    upgrade
+    GITHUB_SOURCE=Stocard/fly
+    GIT_REF=master
+    if [ $# -gt 1 ]; then
+      GITHUB_SOURCE=$2
+    fi
+    if [ $# -gt 2 ]; then
+      GIT_REF=$3
+    fi
+    upgrade $GITHUB_SOURCE $GIT_REF
   ;;
   *)
     echo "Sorry, I don't know $COMMAND"

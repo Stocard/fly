@@ -32,5 +32,7 @@ Builds and starts a container and runs `[command]` in it.
 ####`fly deploy ENVIRONMENT PUBLIC_PORT CONFIG_DIRECTORY`
 Performs `fly fetch`, `fly fetch-config`, `fly build` and `service <SERVICE_NAME> restart`.
 
-####`fly upgrade`
-Upgrades fly to the latest version.
+####`fly upgrade [github_user/repo] [git_ref]`
+Upgrades fly to the latest version.  
+Example: `fly upgrade mirkokiefer/fly`  
+Defaults to `fly upgrade Stocard/fly master`
