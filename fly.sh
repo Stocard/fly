@@ -12,9 +12,10 @@ create_upstart_config() {
   local env=$1
   local public_port=$2
   local image_name=$3
-  local logdir=$4
-  local datadir=$5
-  local configdir=$6
+  local container_name=$4
+  local logdir=$5
+  local datadir=$6
+  local configdir=$7
 
   local config="
   description \"${SERVICE_NAME}\""
@@ -34,7 +35,7 @@ create_upstart_config() {
     done
   '
   config="$config""
-    HOME=$HOME exec docker run --rm -e PORT=$CONTAINER_PORT --env-file=$configdir/$env.env -v $datadir:/data -v $SRCDIR:/app:ro -w /app -p $public_port:$CONTAINER_PORT $image_name bash /app/run.sh 1>>"$logdir/stdout.log" 2>> "$logdir/stderr.log"
+    HOME=$HOME exec docker run --rm -e PORT=$CONTAINER_PORT --env-file=$configdir/$env.env -v $datadir:/data -v $SRCDIR:/app:ro -w /app -p $public_port:$CONTAINER_PORT --name=$container_name $image_name bash /app/run.sh 1>>"$logdir/stdout.log" 2>> "$logdir/stderr.log"
   end script
   "
   
@@ -50,19 +51,21 @@ build() {
   local env=$1
   local public_port=$2
   local configdir=$3
-  local image_name=stocard_${SERVICE_NAME}:${env}
+  local image_name=${SERVICE_NAME}.stocard:${env}
+  local container_name=${env}.${SERVICE_NAME}.stocard
   local logdir="$HOME/logs/$SERVICE_NAME"
   local datadir="$HOME/data/$SERVICE_NAME"
   mkdir -p "$logdir"
   mkdir -p "$datadir"
   docker build --tag="$image_name" - < Dockerfile
-  create_upstart_config $env $public_port $image_name $logdir $datadir $configdir > /etc/init/${SERVICE_NAME}.conf
+  create_upstart_config $env $public_port $image_name $container_name $logdir $datadir $configdir > /etc/init/${SERVICE_NAME}.conf
 }
 
 test() {
-  local test_image_name=stocard_${SERVICE_NAME}:test
+  local test_image_name=${SERVICE_NAME}.stocard:test
+  local container_name=test.${SERVICE_NAME}.stocard
   docker build --tag="$test_image_name" - < Dockerfile
-  docker run -t -i --rm -v $SRCDIR:/app:ro -w /app $test_image_name npm test
+  docker run -t -i --rm -v $SRCDIR:/app:ro -w /app --name=$container_name $test_image_name npm test
 }
 
 case $COMMAND in
