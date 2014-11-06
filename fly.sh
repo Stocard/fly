@@ -61,11 +61,13 @@ build() {
   create_upstart_config $env $public_port $image_name $container_name $logdir $datadir $configdir > /etc/init/${SERVICE_NAME}.conf
 }
 
-test() {
+run() {
+  local command="$@"
+  echo "running command: $command"
   local test_image_name=${SERVICE_NAME}.stocard:test
   local container_name=test.${SERVICE_NAME}.stocard
   docker build --tag="$test_image_name" - < Dockerfile
-  docker run -t -i --rm -v $SRCDIR:/app -w /app --name=$container_name $test_image_name npm test
+  docker run -t -i --rm -v $SRCDIR:/app:ro -w /app $test_image_name $command
 }
 
 upgrade() {
@@ -103,8 +105,9 @@ case $COMMAND in
     build $ENV $PUBLIC_PORT $CONFIG_DIR
     service $SERVICE_NAME restart
   ;;
-  test)
-    test
+  run)
+    ARGS="${@:2}"
+    run $ARGS
   ;;
   upgrade)
     upgrade
