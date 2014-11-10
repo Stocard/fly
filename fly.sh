@@ -35,7 +35,7 @@ create_upstart_config() {
     done
   '
   config="$config""
-    HOME=$HOME exec docker run --rm -e PORT=$CONTAINER_PORT --env-file=$configdir/$env.env -v $datadir:/data -v $SRCDIR:/app -w /app -p $public_port:$CONTAINER_PORT --name=$container_name $image_name bash /app/run.sh 1>>"$logdir/stdout.log" 2>> "$logdir/stderr.log"
+    HOME=$HOME exec docker run --rm -e PORT=$CONTAINER_PORT --env-file=$configdir/$env.env -v $datadir:/data -v $SRCDIR:/app -w /app -p $public_port:$CONTAINER_PORT $image_name bash /app/run.sh 1>>"$logdir/stdout.log" 2>> "$logdir/stderr.log"
   end script
   "
   
@@ -67,7 +67,7 @@ run() {
   local test_image_name=${SERVICE_NAME}.stocard:test
   local container_name=test.${SERVICE_NAME}.stocard
   docker build --tag="$test_image_name" - < Dockerfile
-  docker run -t -i --rm -v $SRCDIR:/app:ro -w /app $test_image_name $command
+  docker run -t -i --rm -v $SRCDIR:/app:rw -w /app $test_image_name $command
 }
 
 upgrade() {
