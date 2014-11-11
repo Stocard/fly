@@ -7,15 +7,16 @@ SERVICE_NAME=${PWD##*/}
 DIR=`pwd`
 SRCDIR="$DIR"
 CONTAINER_PORT=10000
+CONFIG_DIR=$FLY_CONFIG_DIR
+CONTAINER_CONFIG_DIR="$CONFIG_DIR/$SERVICE_NAME"
 
 create_upstart_config() {
-  local env=$1
+  local config_file=$1
   local public_port=$2
   local image_name=$3
   local container_name=$4
   local logdir=$5
   local datadir=$6
-  local configdir=$7
 
   local config="
   description \"${SERVICE_NAME}\""
@@ -35,7 +36,7 @@ create_upstart_config() {
     done
   '
   config="$config""
-    HOME=$HOME exec docker run --rm -e PORT=$CONTAINER_PORT --env-file=$configdir/$env.env -v $datadir:/data -v $SRCDIR:/app -w /app -p $public_port:$CONTAINER_PORT $image_name bash /app/run.sh 1>>"$logdir/stdout.log" 2>> "$logdir/stderr.log"
+    HOME=$HOME exec docker run --rm -e PORT=$CONTAINER_PORT --env-file=$config_file -v $datadir:/data -v $SRCDIR:/app -w /app -p $public_port:$CONTAINER_PORT $image_name bash /app/run.sh 1>>"$logdir/stdout.log" 2>> "$logdir/stderr.log"
   end script
   "
   
@@ -49,16 +50,17 @@ fetch() {
 
 build() {
   local env=$1
-  local public_port=$2
-  local configdir=$3
+  local config_file="$CONTAINER_CONFIG_DIR/$env.env"
+  local public_port=$(grep -Po 'LOCAL_PORT=\K.*' $config_file)
   local image_name=${SERVICE_NAME}.stocard:${env}
   local container_name=${env}.${SERVICE_NAME}.stocard
   local logdir="$HOME/logs/$SERVICE_NAME"
   local datadir="$HOME/data/$SERVICE_NAME"
+  echo "Building $SERVICE_NAME with $config_file"
   mkdir -p "$logdir"
   mkdir -p "$datadir"
   docker build --tag="$image_name" - < Dockerfile
-  create_upstart_config $env $public_port $image_name $container_name $logdir $datadir $configdir > /etc/init/${SERVICE_NAME}.conf
+  create_upstart_config $config_file $public_port $image_name $container_name $logdir $datadir > /etc/init/${SERVICE_NAME}.conf
 }
 
 run() {
@@ -86,25 +88,22 @@ upgrade() {
 
 case $COMMAND in
   fetch)
+    echo "updating container"
     fetch $DIR
   ;;
   fetch-config)
-    CONFIG_DIR=$2
+    echo "updating config"
     fetch $CONFIG_DIR
   ;;
   build)
     ENV=$2
-    PUBLIC_PORT=$3
-    CONFIG_DIR=$4
-    build $ENV $PUBLIC_PORT $CONFIG_DIR
+    build $ENV
   ;;
   deploy)
     ENV=$2
-    PUBLIC_PORT=$3
-    CONFIG_DIR=$4
     fetch $DIR
     fetch $CONFIG_DIR
-    build $ENV $PUBLIC_PORT $CONFIG_DIR
+    build $ENV
     service $SERVICE_NAME restart
   ;;
   run)

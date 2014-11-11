@@ -20,17 +20,19 @@ ln -s /opt/fly/fly.sh /usr/local/bin/fly
 ####`fly fetch`
 Performs `git fetch` in the current directory and resets to origin/master.
 
-####`fly fetch-config DIRECTORY`
-Performs `git fetch` in the given DIRECTORY and resets to origin/master.
+####`fly fetch-config`
+Performs `git fetch` in directory given as environment variable `FLY_CONFIG_DIR` and resets to origin/master.
 
-####`fly build ENVIRONMENT PUBLIC_PORT CONFIG_DIRECTORY`
-Builds a container using the given parameters and creates an upstart config.
+####`fly build ENVIRONMENT`
+Builds a container using the given parameters and creates an upstart config.  
+Requires `FLY_CONFIG_DIR` as an environment variable.
 
 ####`fly run [command]`
 Builds and starts a container and runs `[command]` in it.
 
-####`fly deploy ENVIRONMENT PUBLIC_PORT CONFIG_DIRECTORY`
-Performs `fly fetch`, `fly fetch-config`, `fly build` and `service <SERVICE_NAME> restart`.
+####`fly deploy ENVIRONMENT`
+Performs `fly fetch`, `fly fetch-config`, `fly build` and `service <SERVICE_NAME> restart`.  
+Requires `FLY_CONFIG_DIR` as an environment variable.
 
 ####`fly upgrade [github_user/repo] [git_ref]`
 Upgrades fly to the latest version.  
