@@ -34,7 +34,9 @@ create_upstart_config() {
     done
   '
   config="$config""
-    HOME=$HOME exec docker run --rm -e PORT=$CONTAINER_PORT --env-file=$config_file -v $datadir:/data -v $SRCDIR:/app -w /app -p $public_port:$CONTAINER_PORT --name $container_name $image_name bash /app/run.sh 1>>"$logdir/stdout.log" 2>> "$logdir/stderr.log"
+    CONTAINER_ID=\$(uuidgen | md5sum | head -c6)
+    CONTAINER_NAME=$container_name-\$CONTAINER_ID
+    HOME=$HOME exec docker run --rm -e PORT=$CONTAINER_PORT --env-file=$config_file -v $datadir:/data -v $SRCDIR:/app -w /app -p $public_port:$CONTAINER_PORT --name \$CONTAINER_NAME $image_name bash /app/run.sh 1>>"$logdir/stdout.log" 2>> "$logdir/stderr.log"
   end script
   "
   
@@ -52,8 +54,7 @@ build() {
   local config_file="$config_dir/$SERVICE_NAME/$env.env"
   local public_port=$(grep -Po 'LOCAL_PORT=\K.*' $config_file)
   local image_name=${SERVICE_NAME}.stocard:${env}
-  local container_id=$(uuidgen | md5sum | head -c6)
-  local container_name=${env}.${SERVICE_NAME}.stocard-${container_id}
+  local container_name=${env}.${SERVICE_NAME}.stocard
   local logdir="$HOME/logs/$SERVICE_NAME"
   local datadir="$HOME/data/$SERVICE_NAME"
   echo "Building $SERVICE_NAME with $config_file"
