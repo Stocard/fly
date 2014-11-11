@@ -7,8 +7,6 @@ SERVICE_NAME=${PWD##*/}
 DIR=`pwd`
 SRCDIR="$DIR"
 CONTAINER_PORT=10000
-CONFIG_DIR=$FLY_CONFIG_DIR
-CONTAINER_CONFIG_DIR="$CONFIG_DIR/$SERVICE_NAME"
 
 create_upstart_config() {
   local config_file=$1
@@ -50,7 +48,8 @@ fetch() {
 
 build() {
   local env=$1
-  local config_file="$CONTAINER_CONFIG_DIR/$env.env"
+  local config_dir=$2
+  local config_file="$config_dir/$SERVICE_NAME/$env.env"
   local public_port=$(grep -Po 'LOCAL_PORT=\K.*' $config_file)
   local image_name=${SERVICE_NAME}.stocard:${env}
   local container_id=$(uuidgen | md5sum | head -c6)
@@ -98,13 +97,13 @@ case $COMMAND in
   ;;
   build)
     ENV=$2
-    build $ENV
+    build $ENV $FLY_CONFIG_DIR
   ;;
   deploy)
     ENV=$2
     fetch $DIR
     fetch $CONFIG_DIR
-    build $ENV
+    build $ENV $FLY_CONFIG_DIR
     service $SERVICE_NAME restart
   ;;
   run)
