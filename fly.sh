@@ -93,7 +93,7 @@ case $COMMAND in
   ;;
   fetch-config)
     echo "updating config"
-    fetch $CONFIG_DIR
+    fetch $FLY_CONFIG_DIR
   ;;
   build)
     ENV=$2
@@ -102,7 +102,7 @@ case $COMMAND in
   deploy)
     ENV=$2
     fetch $DIR
-    fetch $CONFIG_DIR
+    fetch $FLY_CONFIG_DIR
     build $ENV $FLY_CONFIG_DIR
     service $SERVICE_NAME restart
   ;;
