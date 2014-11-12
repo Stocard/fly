@@ -43,6 +43,37 @@ create_upstart_config() {
   echo "$config"
 }
 
+create_loggly_config() {
+  local env=$1
+  local service_name=$2
+  local loggly_key=$3
+  local file_name=$4
+  local file_path=/home/ubuntu/logs/$service_name/$file_name.log
+  local file_tag=$service_name-$env-$file_name
+  config="
+\$ModLoad imfile
+  \$InputFilePollInterval 10
+  \$WorkDirectory /var/spool/rsyslog
+  \$PrivDropToGroup adm
+    
+  # File access file:
+  \$InputFileName $file_path
+  \$InputFileTag $file_tag:
+  \$InputFileStateFile stat-$file_tag
+  \$InputFileSeverity info
+  \$InputFilePersistStateInterval 20000
+  \$InputRunFileMonitor
+
+  #Add a tag for file events
+  \$template LogglyFormatFile$file_tag,\"<%pri%>%protocol-version% %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% [$loggly_key@41058 tag=\\\"file\\\"] %msg%\n\"
+
+  if \$programname == '$file_tag' then @@logs-01.loggly.com:514;LogglyFormatFile$file_tag
+  if \$programname == '$file_tag' then ~
+"
+
+  echo "$config" > /etc/rsyslog.d/$file_tag.conf
+}
+
 fetch() {
   local dir=$1
   (cd $dir && git fetch --all && git reset --hard origin/master)
@@ -51,6 +82,7 @@ fetch() {
 build() {
   local env=$1
   local config_dir=$2
+
   local config_file="$config_dir/$SERVICE_NAME/$env.env"
   local public_port=$(grep -Po 'LOCAL_PORT=\K.*' $config_file)
   local image_name=${SERVICE_NAME}.stocard:${env}
@@ -62,6 +94,11 @@ build() {
   mkdir -p "$datadir"
   docker build --tag="$image_name" - < Dockerfile
   create_upstart_config $config_file $public_port $image_name $container_name $logdir $datadir > /etc/init/${SERVICE_NAME}.conf
+
+  local loggly_config_file="$config_dir/loggly.conf"
+  local loggly_token=$(grep -Po 'TOKEN=\K.*' $loggly_config_file)
+  create_loggly_config $env $SERVICE_NAME $loggly_token stdout
+  create_loggly_config $env $SERVICE_NAME $loggly_token stderr
 }
 
 run() {
@@ -105,6 +142,7 @@ case $COMMAND in
     fetch $DIR
     fetch $FLY_CONFIG_DIR
     build $ENV $FLY_CONFIG_DIR
+    service rsyslog restart
     service $SERVICE_NAME restart
   ;;
   run)
