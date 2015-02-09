@@ -67,7 +67,7 @@ create_loggly_config() {
 #Add a tag for file events
 \$template LogglyFormatFile-$file_tag,\"<%pri%>%protocol-version% %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% [$loggly_key@41058 tag=\\\"${file_tag}\\\"] %msg%\n\"
 
-if \$programname == '$file_tag' then @@logs-01.loggly.com:514;LogglyFormatFile$file_tag
+if \$programname == '$file_tag' then @@logs-01.loggly.com:514;LogglyFormatFile-$file_tag
 # if \$programname == '$file_tag' then ~
 "
 
