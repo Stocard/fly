@@ -50,25 +50,41 @@ create_loggly_config() {
   local file_name=$4
   local file_path=/home/ubuntu/logs/$service_name/$file_name.log
   local file_tag=$service_name-$env-$file_name
-  config="
-\$ModLoad imfile
-\$InputFilePollInterval 10
-\$WorkDirectory /var/spool/rsyslog
-\$PrivDropToGroup adm
+#   config="
+# \$ModLoad imfile
+# \$InputFilePollInterval 10
+# \$WorkDirectory /var/spool/rsyslog
+# \$PrivDropToGroup adm
   
-# File access file:
-\$InputFileName $file_path
-\$InputFileTag $file_tag:
-\$InputFileStateFile stat-$file_tag
-\$InputFileSeverity info
-\$InputFilePersistStateInterval 20000
-\$InputRunFileMonitor
+# # File access file:
+# \$InputFileName $file_path
+# \$InputFileTag $file_tag:
+# \$InputFileStateFile stat-$file_tag
+# \$InputFileSeverity info
+# \$InputFilePersistStateInterval 20000
+# \$InputRunFileMonitor
 
-#Add a tag for file events
-\$template LogglyFormatFile$file_tag,\"<%pri%>%protocol-version% %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% [$loggly_key@41058 tag=\\\"file\\\"] %msg%\n\"
+# #Add a tag for file events
+# \$template LogglyFormatFile$file_tag,\"<%pri%>%protocol-version% %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% [$loggly_key@41058 tag=\\\"file\\\"] %msg%\n\"
 
-if \$programname == '$file_tag' then @@logs-01.loggly.com:514;LogglyFormatFile$file_tag
-if \$programname == '$file_tag' then ~
+# if \$programname == '$file_tag' then @@logs-01.loggly.com:514;LogglyFormatFile$file_tag
+# if \$programname == '$file_tag' then ~
+# "
+
+  config="
+# Setup disk assisted queues
+\$WorkDirectory /var/spool/rsyslog        # where to place spool files
+\$ActionQueueFileName fwdRule_$file_tag   # unique name prefix for spool files
+\$ActionQueueMaxDiskSpace 1g              # 1gb space limit (use as much as possible)
+\$ActionQueueSaveOnShutdown on            # save messages to disk on shutdown
+\$ActionQueueType LinkedList              # run asynchronously
+\$ActionResumeRetryCount -1               # infinite retries if host is down
+
+template(name=\"LogglyFormat-${file_tag}\" type=\"string\"
+ string=\"<%pri%>%protocol-version% %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% [${loggly_key}@41058 tag=\\\"${file_tag}\\\"] %msg%\n\")
+
+# Send messages to Loggly over TCP using the template.
+action(type=\"omfwd\" protocol=\"tcp\" target=\"logs-01.loggly.com\" port=\"514\" template=\"LogglyFormat-${file_tag}\")
 "
 
   echo "$config" > /etc/rsyslog.d/$file_tag.conf
