@@ -84,7 +84,7 @@ template(name=\"LogglyFormat-${file_tag}\" type=\"string\"
  string=\"<%pri%>%protocol-version% %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% [${loggly_key}@41058 tag=\\\"${file_tag}\\\"] %msg%\n\")
 
 # Send messages to Loggly over TCP using the template.
-action(type=\"omfwd\" protocol=\"tcp\" target=\"logs-01.loggly.com\" port=\"514\" template=\"LogglyFormat-${file_tag}\")
+if \$programname == '$file_tag' then action(type=\"omfwd\" protocol=\"tcp\" target=\"logs-01.loggly.com\" port=\"514\" template=\"LogglyFormat-${file_tag}\")
 "
 
   echo "$config" > /etc/rsyslog.d/$file_tag.conf
