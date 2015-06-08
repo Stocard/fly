@@ -36,7 +36,7 @@ create_upstart_config() {
   config="$config""
     CONTAINER_ID=\$(uuidgen | md5sum | head -c6)
     CONTAINER_NAME=$container_name-\$CONTAINER_ID
-    HOME=$HOME exec docker run --rm -e PORT=$CONTAINER_PORT --env-file=$config_file -v $datadir:/data -v $SRCDIR:/app -w /app -p $public_port:$CONTAINER_PORT --name \$CONTAINER_NAME $image_name bash /app/run.sh 1>>"$logdir/stdout.log" 2>> "$logdir/stderr.log"
+    HOME=$HOME exec docker run --log-driver=none --rm -e PORT=$CONTAINER_PORT --env-file=$config_file -v $datadir:/data -v $SRCDIR:/app -w /app -p $public_port:$CONTAINER_PORT --name \$CONTAINER_NAME $image_name bash /app/run.sh 1>>"$logdir/stdout.log" 2>> "$logdir/stderr.log"
   end script
   "
   
