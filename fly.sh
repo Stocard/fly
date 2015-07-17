@@ -75,8 +75,9 @@ if \$programname == '$file_tag' then @@logs-01.loggly.com:514;LogglyFormatFile-$
 }
 
 fetch() {
-  local dir=$1
-  (cd $dir && git fetch --all && git reset --hard origin/master)
+  local dir="$1"
+  local git_ref="$2"
+  (cd $dir && git fetch --all && git reset --hard $git_ref)
 }
 
 build() {
@@ -126,8 +127,9 @@ upgrade() {
 
 case $COMMAND in
   fetch)
+    GIT_REF="${2-origin/master}"
     echo "updating container"
-    fetch $DIR
+    fetch "$DIR" "$GIT_REF"
   ;;
   fetch-config)
     echo "updating config"
@@ -139,8 +141,9 @@ case $COMMAND in
   ;;
   deploy)
     ENV=$2
-    fetch $DIR
-    fetch $FLY_CONFIG_DIR
+    GIT_REF="${3-origin/master}"
+    fetch "$DIR" "$GIT_REF"
+    fetch "$FLY_CONFIG_DIR" "origin/master"
     build $ENV $FLY_CONFIG_DIR
     service rsyslog restart
     service $SERVICE_NAME restart
