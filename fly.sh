@@ -132,8 +132,9 @@ case $COMMAND in
     fetch "$DIR" "$GIT_REF"
   ;;
   fetch-config)
+    GIT_REF="${2-origin/master}"
     echo "updating config"
-    fetch $FLY_CONFIG_DIR
+    fetch "$FLY_CONFIG_DIR" "$GIT_REF"
   ;;
   build)
     ENV=$2
