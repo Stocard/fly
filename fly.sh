@@ -93,7 +93,7 @@ build() {
   echo "Building $SERVICE_NAME with $config_file"
   mkdir -p "$logdir"
   mkdir -p "$datadir"
-  docker build --tag="$image_name" - < Dockerfile
+  docker build --pull=true --tag="$image_name" - < Dockerfile
   create_upstart_config $config_file $public_port $image_name $container_name $logdir $datadir > /etc/init/${SERVICE_NAME}.conf
 
   local loggly_config_file="$config_dir/loggly.conf"
@@ -107,7 +107,7 @@ run() {
   echo "running command: $command"
   local test_image_name=${SERVICE_NAME}.stocard:test
   local container_name=test.${SERVICE_NAME}.stocard
-  docker build --tag="$test_image_name" - < Dockerfile
+  docker build --pull=true --tag="$test_image_name" - < Dockerfile
   docker run -t -i --rm -v $SRCDIR:/app:rw -w /app $test_image_name $command
 }
 
