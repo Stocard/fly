@@ -88,7 +88,7 @@ build() {
 
   local config_file="$config_dir/$SERVICE_NAME/$env.env"
   local public_port=$(grep -Po 'LOCAL_PORT=\K.*' $config_file)
-  local image_name=${SERVICE_NAME}.stocard:${env}
+  local image_name=${SERVICE_NAME}-stocard:${env}
   local container_name=${env}.${SERVICE_NAME}.stocard
   local logdir="$HOME/logs/$SERVICE_NAME"
   local datadir="$HOME/data/$SERVICE_NAME"
@@ -107,7 +107,7 @@ build() {
 run() {
   local command="$@"
   echo "running command: $command"
-  local test_image_name=${SERVICE_NAME}.stocard:test
+  local test_image_name=${SERVICE_NAME}-stocard:test
   local container_name=test.${SERVICE_NAME}.stocard
   docker build --pull=true --tag="$test_image_name" - < Dockerfile
   docker run -t -i --rm -v $SRCDIR:/app:rw -w /app $test_image_name $command
