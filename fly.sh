@@ -13,9 +13,8 @@ create_upstart_config() {
   local public_port=$2
   local image_name=$3
   local container_name=$4
-  local logdir=$5
-  local datadir=$6
-
+  local env=$5
+  local service_name=$6
   local config="
   description \"${SERVICE_NAME}\""
 
@@ -36,44 +35,11 @@ create_upstart_config() {
   config="$config""
     CONTAINER_ID=\$(uuidgen | md5sum | head -c6)
     CONTAINER_NAME=$container_name-\$CONTAINER_ID
-    HOME=$HOME exec docker run --log-driver=none --rm -e PORT=$CONTAINER_PORT --env-file=$config_file -v $datadir:/data -v $SRCDIR:/app -w /app -p $public_port:$CONTAINER_PORT --name \$CONTAINER_NAME $image_name bash /app/run.sh 1>>"$logdir/stdout.log" 2>> "$logdir/stderr.log"
+    HOME=$HOME exec docker run --log-driver=awslogs --log-opt awslogs-region=eu-west-1 --log-opt awslogs-group=$env/$service_name --log-opt awslogs-stream=$(curl -s http://169.254.169.254/latest/meta-data/public-hostname) --rm -e PORT=$CONTAINER_PORT --env-file=$config_file -v $SRCDIR:/app -w /app -p $public_port:$CONTAINER_PORT --name \$CONTAINER_NAME $image_name bash /app/run.sh
   end script
   "
-  
+
   echo "$config"
-}
-
-create_loggly_config() {
-  local env=$1
-  local service_name=$2
-  local loggly_key=$3
-  local file_name=$4
-  local file_path=/home/ubuntu/logs/$service_name/$file_name.log
-  local file_tag=$service_name-$env-$file_name
-  config="
-\$ModLoad imfile
-\$InputFilePollInterval 10
-\$WorkDirectory /var/spool/rsyslog
-\$PrivDropToGroup adm
-  
-# File access file:
-\$InputFileName $file_path
-\$InputFileTag $file_tag:
-\$InputFileStateFile stat-$file_tag
-\$InputFileSeverity info
-\$InputFilePersistStateInterval 20000
-\$InputRunFileMonitor
-
-#Add a tag for file events
-\$template LogglyFormatFile-$file_tag,\"<%pri%>%protocol-version% %timestamp:::date-rfc3339% %HOSTNAME% %app-name% %procid% %msgid% [$loggly_key@41058 tag=\\\"${file_tag}\\\"] %msg%\n\"
-
-if \$programname == '$file_tag' then {
-  @@logs-01.loggly.com:514;LogglyFormatFile-$file_tag
-  stop
-}
-"
-
-  echo "$config" > /etc/rsyslog.d/$file_tag.conf
 }
 
 fetch() {
@@ -85,23 +51,13 @@ fetch() {
 build() {
   local env=$1
   local config_dir=$2
-
   local config_file="$config_dir/$SERVICE_NAME/$env.env"
   local public_port=$(grep -Po 'LOCAL_PORT=\K.*' $config_file)
   local image_name=${SERVICE_NAME}-stocard:${env}
   local container_name=${env}.${SERVICE_NAME}.stocard
-  local logdir="$HOME/logs/$SERVICE_NAME"
-  local datadir="$HOME/data/$SERVICE_NAME"
   echo "Building $SERVICE_NAME with $config_file"
-  mkdir -p "$logdir"
-  mkdir -p "$datadir"
   docker build --pull=true --tag="$image_name" - < Dockerfile
-  create_upstart_config $config_file $public_port $image_name $container_name $logdir $datadir > /etc/init/${SERVICE_NAME}.conf
-
-  local loggly_config_file="$config_dir/loggly.conf"
-  local loggly_token=$(grep -Po 'TOKEN=\K.*' $loggly_config_file)
-  create_loggly_config $env $SERVICE_NAME $loggly_token stdout
-  create_loggly_config $env $SERVICE_NAME $loggly_token stderr
+  create_upstart_config $config_file $public_port $image_name $container_name $env $SERVICE_NAME > /etc/init/${SERVICE_NAME}.conf
 }
 
 run() {
@@ -148,7 +104,6 @@ case $COMMAND in
     fetch "$DIR" "$GIT_REF"
     fetch "$FLY_CONFIG_DIR" "origin/master"
     build $ENV $FLY_CONFIG_DIR
-    service rsyslog restart
     service $SERVICE_NAME restart
   ;;
   run)
@@ -170,3 +125,4 @@ case $COMMAND in
     echo "Sorry, I don't know $COMMAND"
   ;;
 esac
+
