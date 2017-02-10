@@ -45,7 +45,7 @@ create_upstart_config() {
 fetch() {
   local dir="$1"
   local git_ref="$2"
-  (cd $dir && git fetch --all && git reset --hard $git_ref)
+  (cd $dir && git fetch --all && git reset --hard $git_ref && git rev-parse HEAD && git submodule update --init --recursive && git submodule status)
 }
 
 build() {
